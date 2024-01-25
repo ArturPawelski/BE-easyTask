@@ -51,13 +51,13 @@ const registerUser = async (req, res) => {
 
 const loginUser = async (req, res) => {
   try {
-    const { name, password } = req.body;
+    const { email, password } = req.body;
 
-    if (!name || !password) {
+    if (!email || !password) {
       return res.status(400).json(createResponse(false, null, 'all fields are mandatory'));
     }
 
-    const user = await userModel.findOne({ name });
+    const user = await userModel.findOne({ email });
 
     if (!user || !(await bcrypt.compare(password, user.password))) {
       return res.status(404).json(createResponse(false, null, 'wrong password or name'));
