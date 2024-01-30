@@ -1,5 +1,5 @@
 const Joi = require('joi');
-const createResponse = require('../services/responseDTO');
+const createResponse = require('../../services/responseDTO');
 
 const registerUserSchema = Joi.object({
   name: Joi.string().min(4).max(20).required().messages({

@@ -3,6 +3,7 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const userModel = require('../models/userModel');
 const createResponse = require('../services/responseDTO');
+const { sendPasswordResetCode } = require('../utils/emailUtils');
 
 //@desc register a user
 //@route POST /users/register
@@ -103,8 +104,21 @@ const test = async (req, res) => {
   }
 };
 
+const testEmail = async (req, res) => {
+  try {
+    await sendPasswordResetCode("test","test");
+    res.status(200).send('Password reset email sent.');
+  } catch (error) {
+    res.status(500).send('Error sending email.');
+  }
+};
+
+
+
+
 module.exports = {
   registerUser,
   loginUser,
   test,
+  testEmail
 };
