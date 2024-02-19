@@ -3,7 +3,7 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const userModel = require('../models/userModel');
 const createResponse = require('../services/responseDTO');
-const { sendPasswordResetCode } = require('../utils/emailUtils');
+const { sendPasswordResetCode, confirmEmail } = require('../utils/emailUtils');
 
 //@desc register a user
 //@route POST /users/register
@@ -12,8 +12,6 @@ const { sendPasswordResetCode } = require('../utils/emailUtils');
 const registerUser = async (req, res) => {
   try {
     const { name, email, password } = req.body;
-
-    // checkif passsword is the same
 
     if (!name || !email || !password) {
       return res.status(400).json(createResponse(false, null, 'all fields are mandatory'));
@@ -28,14 +26,20 @@ const registerUser = async (req, res) => {
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
+    const verificationToken = jwt.sign({ email }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '5m' });
+    const verificationCode = Math.floor(100000 + Math.random() * 900000);
 
     const user = await userModel.create({
       name,
       email,
       password: hashedPassword,
+      verificationCode,
+      verificationToken,
     });
 
     if (user) {
+      const verificationLink = `${process.env.FRONT_APP_URL}/verify?token=${verificationToken}`;
+      confirmEmail(user.email, verificationCode, verificationLink);
       return res.status(201).json(createResponse(true, user, 'registration completed successfully'));
     } else {
       return res.status(400).json(createResponse(false, null, 'user data is not valid'));
@@ -43,6 +47,26 @@ const registerUser = async (req, res) => {
   } catch (error) {
     console.log('error', error);
     res.status(500).json(createResponse(false, null, 'something went wrong'));
+  }
+};
+
+const verifyAccount = async (req, res) => {
+  const { token } = req.query;
+  const { code } = req.body;
+  try {
+    const payload = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
+    const user = await userModel.findOne({ email: payload.email, verificationCode: code });
+
+    if (!user) {
+      return res.status(400).json(createResponse(false, null, 'Verification failed. Incorrect verification code or user not found.'));
+    }
+
+    user.isVerified = true;
+    await user.save();
+
+    res.status(200).json(createResponse(true, null, 'Account verified successfully'));
+  } catch (error) {
+    res.status(400).json(createResponse(false, null, 'Invalid or expired token'));
   }
 };
 
@@ -97,7 +121,8 @@ const loginUser = async (req, res) => {
 
 const test = async (req, res) => {
   try {
-    res.status(200).json(createResponse(true, null, 'authorization was successfully'));
+    req.user;
+    res.status(200).json(createResponse(true, req.user, 'authorization was successfully'));
   } catch (error) {
     console.log(error);
     res.sendStatus(500);
@@ -106,19 +131,17 @@ const test = async (req, res) => {
 
 const testEmail = async (req, res) => {
   try {
-    await sendPasswordResetCode("test","test");
+    await sendPasswordResetCode('test', 'test');
     res.status(200).send('Password reset email sent.');
   } catch (error) {
     res.status(500).send('Error sending email.');
   }
 };
 
-
-
-
 module.exports = {
   registerUser,
   loginUser,
   test,
-  testEmail
+  testEmail,
+  verifyAccount,
 };
