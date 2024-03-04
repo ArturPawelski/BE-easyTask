@@ -50,6 +50,9 @@ const registerUser = async (req, res) => {
   }
 };
 
+//@desc verify User
+//@route POST /users/verify
+//@access public
 const verifyAccount = async (req, res) => {
   const { token } = req.query;
   const { code } = req.body;
@@ -67,6 +70,39 @@ const verifyAccount = async (req, res) => {
     res.status(200).json(createResponse(true, null, 'Account verified successfully'));
   } catch (error) {
     res.status(400).json(createResponse(false, null, 'Invalid or expired token'));
+  }
+};
+
+//@desc resend code to verify
+//@route POST /users/resend-verification
+//@access public
+const resendVerificationCode = async (req, res) => {
+  const { email } = req.body;
+
+  try {
+    const user = await userModel.findOne({ email });
+
+    if (!user) {
+      return res.status(404).json(createResponse(false, null, 'User not found.'));
+    }
+    if (user.isVerified) {
+      return res.status(400).json(createResponse(false, null, 'This account has already been verified.'));
+    }
+
+    const verificationCode = Math.floor(100000 + Math.random() * 900000);
+    const verificationToken = jwt.sign({ email }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '5m' });
+
+    user.verificationCode = verificationCode;
+    user.verificationToken = verificationToken;
+    await user.save();
+
+    const verificationLink = `${process.env.FRONT_APP_URL}/verify?token=${verificationToken}`;
+    confirmEmail(email, verificationCode, verificationLink);
+
+    res.json(createResponse(true, null, 'Verification code resent successfully. Please check your email.'));
+  } catch (error) {
+    console.error('Resend Verification Error:', error);
+    res.status(500).json(createResponse(false, null, 'Failed to resend verification code.'));
   }
 };
 
@@ -144,4 +180,5 @@ module.exports = {
   test,
   testEmail,
   verifyAccount,
+  resendVerificationCode,
 };
