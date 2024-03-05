@@ -4,6 +4,7 @@ const jwt = require('jsonwebtoken');
 const userModel = require('../models/userModel');
 const createResponse = require('../services/responseDTO');
 const { confirmEmail } = require('../utils/emailUtils');
+const UserService = require('../services/userService');
 
 //@desc register a user
 //@route POST /users/register
@@ -17,36 +18,14 @@ const registerUser = async (req, res) => {
       return res.status(400).json(createResponse(false, null, 'all fields are mandatory'));
     }
 
-    const userAvailable = await userModel.findOne({
-      $or: [{ email }, { name }],
-    });
+    const user = await UserService.registerUser(name, email, password);
 
-    if (userAvailable) {
-      return res.status(409).json(createResponse(false, null, 'user already registered'));
-    }
-
-    const hashedPassword = await bcrypt.hash(password, 10);
-    const verificationToken = jwt.sign({ email }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: process.env.VERIFICATION_EXPIRES });
-    const verificationCode = Math.floor(100000 + Math.random() * 900000);
-
-    const user = await userModel.create({
-      name,
-      email,
-      password: hashedPassword,
-      verificationCode,
-      verificationToken,
-    });
-
-    if (user) {
-      const verificationLink = `${process.env.FRONT_APP_URL}/verify?token=${verificationToken}`;
-      confirmEmail(user.email, verificationCode, verificationLink);
-      return res.status(201).json(createResponse(true, user, 'registration completed successfully'));
-    } else {
-      return res.status(400).json(createResponse(false, null, 'user data is not valid'));
-    }
+    res.status(201).json(createResponse(true, user, 'registration completed successfully'));
   } catch (error) {
-    console.log('error', error);
-    res.status(500).json(createResponse(false, null, 'something went wrong'));
+    if (error.message) {
+      return res.status(400).json(createResponse(false, null, error.message));
+    }
+    res.status(400).json(createResponse(false, null, 'something went wrong'));
   }
 };
 
