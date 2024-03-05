@@ -3,7 +3,7 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const userModel = require('../models/userModel');
 const createResponse = require('../services/responseDTO');
-const { sendPasswordResetCode, confirmEmail } = require('../utils/emailUtils');
+const { confirmEmail } = require('../utils/emailUtils');
 
 //@desc register a user
 //@route POST /users/register
@@ -26,7 +26,7 @@ const registerUser = async (req, res) => {
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    const verificationToken = jwt.sign({ email }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '5m' });
+    const verificationToken = jwt.sign({ email }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: process.env.VERIFICATION_EXPIRES });
     const verificationCode = Math.floor(100000 + Math.random() * 900000);
 
     const user = await userModel.create({
@@ -90,7 +90,7 @@ const resendVerificationCode = async (req, res) => {
     }
 
     const verificationCode = Math.floor(100000 + Math.random() * 900000);
-    const verificationToken = jwt.sign({ email }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '5m' });
+    const verificationToken = jwt.sign({ email }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: process.env.VERIFICATION_EXPIRES });
 
     user.verificationCode = verificationCode;
     user.verificationToken = verificationToken;
@@ -165,20 +165,10 @@ const test = async (req, res) => {
   }
 };
 
-const testEmail = async (req, res) => {
-  try {
-    await sendPasswordResetCode('test', 'test');
-    res.status(200).send('Password reset email sent.');
-  } catch (error) {
-    res.status(500).send('Error sending email.');
-  }
-};
-
 module.exports = {
   registerUser,
   loginUser,
   test,
-  testEmail,
   verifyAccount,
   resendVerificationCode,
 };

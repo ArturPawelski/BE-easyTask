@@ -1,5 +1,5 @@
 const express = require('express');
-const { registerUser, loginUser, test, testEmail, verifyAccount, resendVerificationCode } = require('../controllers/userController');
+const { registerUser, loginUser, test, verifyAccount, resendVerificationCode } = require('../controllers/userController');
 const { validateUserData } = require('../middleware/validate/validateAuthData');
 const validateToken = require('../middleware/validateTokenHandler');
 
@@ -13,9 +13,6 @@ userRouter.post('/resend-verification', resendVerificationCode);
 
 userRouter.post('/login', loginUser);
 
-// userRouter.post('/logout', validateToken, logoutUser);
-
 userRouter.get('/test', validateToken, test); //for testing
-userRouter.post('/emailTest', testEmail); //for testing
 
 module.exports = userRouter;

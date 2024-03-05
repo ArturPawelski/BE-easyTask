@@ -34,7 +34,6 @@ function validateUserData(req, res, next) {
   const result = registerUserSchema.validate(req.body);
 
   if (result.error) {
-    console.log(result.error.details);
     return res.status(400).json(createResponse(false, null, result.error.details[0].message));
   }
 
