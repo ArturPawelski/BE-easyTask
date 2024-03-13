@@ -35,19 +35,12 @@ const verifyAccount = async (req, res) => {
   const { token } = req.query;
   const { code } = req.body;
   try {
-    const payload = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
-    const user = await userModel.findOne({ email: payload.email, verificationCode: code });
-
-    if (!user) {
-      return res.status(400).json(createResponse(false, null, 'Verification failed. Incorrect verification code or user not found.'));
-    }
-
-    user.isVerified = true;
-    await user.save();
-
+    await UserService.verifyUser(token, code);
     res.status(200).json(createResponse(true, null, 'Account verified successfully'));
   } catch (error) {
-    res.status(400).json(createResponse(false, null, 'Invalid or expired token'));
+    const statusCode = error.statusCode || 500;
+    const message = error.message || 'Something went wrong.';
+    return res.status(statusCode).json(createResponse(false, null, message));
   }
 };
 
