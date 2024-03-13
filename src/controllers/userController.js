@@ -22,10 +22,9 @@ const registerUser = async (req, res) => {
 
     res.status(201).json(createResponse(true, user, 'registration completed successfully'));
   } catch (error) {
-    if (error.message) {
-      return res.status(400).json(createResponse(false, null, error.message));
-    }
-    res.status(400).json(createResponse(false, null, 'something went wrong'));
+    const statusCode = error.statusCode || 500;
+    const message = error.message || 'Something went wrong.';
+    return res.status(statusCode).json(createResponse(false, null, message));
   }
 };
 
