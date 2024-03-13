@@ -2,6 +2,7 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const userModel = require('../models/userModel');
 const { confirmEmail } = require('../utils/emailUtils');
+const CustomError = require('../utils/customError');
 
 class UserService {
   async registerUser(name, email, password) {
@@ -9,11 +10,10 @@ class UserService {
       $or: [{ email }, { name }],
     });
     if (userAvailable) {
-      throw new Error('user already registered');
+      throw new CustomError('User already registered', 409);
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-
     const verificationToken = jwt.sign({ email }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: process.env.VERIFICATION_EXPIRES });
     const verificationCode = Math.floor(100000 + Math.random() * 900000);
 
