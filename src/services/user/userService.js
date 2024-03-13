@@ -39,7 +39,7 @@ class UserService {
     }
   }
 
-  async verifyUser(token, verificationCode) {
+  async verifyAccount(token, verificationCode) {
     try {
       const payload = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
       const user = await userDataService.findUser({ email: payload.email, verificationCode });
@@ -63,6 +63,59 @@ class UserService {
       if (error instanceof jwt.JsonWebTokenError) {
         throw new CustomError('Invalid or expired token', 400);
       }
+      throw new CustomError(error.message, error.statusCode || 500);
+    }
+  }
+
+  async resendVerificationCode(email) {
+    try {
+      const user = await userDataService.findUser({ email });
+
+      if (!user) {
+        throw new CustomError('User not found.', 404);
+      }
+      if (user.isVerified) {
+        throw new CustomError('This account has already been verified.', 400);
+      }
+
+      const verificationCode = Math.floor(100000 + Math.random() * 900000);
+      const verificationToken = jwt.sign({ email }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: process.env.VERIFICATION_EXPIRES });
+      const verificationLink = `${process.env.FRONT_APP_URL}/verify?token=${verificationToken}`;
+
+      await userDataService.updateUser({ _id: user._id }, { verificationCode, verificationToken });
+
+      confirmEmail(email, verificationCode, verificationLink);
+
+      return true;
+    } catch (error) {
+      throw new CustomError(error.message, error.statusCode || 500);
+    }
+  }
+
+  async loginUser(email, password) {
+    try {
+      const user = await userDataService.findUser({ email });
+
+      if (!user || !(await bcrypt.compare(password, user.password))) {
+        throw new CustomError('Wrong email or password.', 404);
+      }
+
+      if (user && (await bcrypt.compare(password, user.password))) {
+        const accessToken = jwt.sign(
+          {
+            user: {
+              name: user.name,
+              email: user.email,
+              id: user._id,
+            },
+          },
+          process.env.ACCESS_TOKEN_SECRET,
+          { expiresIn: process.env.JWT_EXPIRES_IN }
+        );
+
+        return { accessToken, user: { name: user.name, email: user.email, id: user._id } };
+      }
+    } catch (error) {
       throw new CustomError(error.message, error.statusCode || 500);
     }
   }
