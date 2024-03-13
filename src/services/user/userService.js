@@ -1,12 +1,12 @@
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const userModel = require('../models/userModel');
-const { confirmEmail } = require('../utils/emailUtils');
-const CustomError = require('../utils/customError');
+const { confirmEmail } = require('../../utils/emailUtils');
+const CustomError = require('../../utils/customError');
+const userDataService = require('./userDataService');
 
 class UserService {
   async registerUser(name, email, password) {
-    const userAvailable = await userModel.findOne({
+    const userAvailable = await userDataService.findUser({
       $or: [{ email }, { name }],
     });
     if (userAvailable) {
@@ -17,7 +17,9 @@ class UserService {
     const verificationToken = jwt.sign({ email }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: process.env.VERIFICATION_EXPIRES });
     const verificationCode = Math.floor(100000 + Math.random() * 900000);
 
-    const user = await userModel.create({
+    const verificationLink = `${process.env.FRONT_APP_URL}/verify?token=${verificationToken}`;
+
+    const user = await userDataService.createUser({
       name,
       email,
       password: hashedPassword,
@@ -25,12 +27,10 @@ class UserService {
       verificationToken,
     });
     if (!user) {
-      throw new Error('user data is not valid');
+      throw new CustomError('User data is not valid', 400);
     }
 
-    const verificationLink = `${process.env.FRONT_APP_URL}/verify?token=${verificationToken}`;
     confirmEmail(user.email, verificationCode, verificationLink);
-
     return user;
   }
 }

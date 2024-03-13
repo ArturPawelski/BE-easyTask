@@ -4,7 +4,7 @@ const jwt = require('jsonwebtoken');
 const userModel = require('../models/userModel');
 const createResponse = require('../services/responseDTO');
 const { confirmEmail } = require('../utils/emailUtils');
-const UserService = require('../services/userService');
+const UserService = require('../services/user/userService');
 
 //@desc register a user
 //@route POST /users/register
