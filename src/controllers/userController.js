@@ -1,52 +1,19 @@
-require('dotenv').config();
-const bcrypt = require('bcrypt');
-const jwt = require('jsonwebtoken');
-const userModel = require('../models/userModel');
 const createResponse = require('../services/responseDTO');
-const { confirmEmail } = require('../utils/emailUtils');
+const UserService = require('../services/user/userService');
 
 //@desc register a user
 //@route POST /users/register
 //@access public
-
 const registerUser = async (req, res) => {
   try {
     const { name, email, password } = req.body;
 
-    if (!name || !email || !password) {
-      return res.status(400).json(createResponse(false, null, 'all fields are mandatory'));
-    }
-
-    const userAvailable = await userModel.findOne({
-      $or: [{ email }, { name }],
-    });
-
-    if (userAvailable) {
-      return res.status(409).json(createResponse(false, null, 'user already registered'));
-    }
-
-    const hashedPassword = await bcrypt.hash(password, 10);
-    const verificationToken = jwt.sign({ email }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: process.env.VERIFICATION_EXPIRES });
-    const verificationCode = Math.floor(100000 + Math.random() * 900000);
-
-    const user = await userModel.create({
-      name,
-      email,
-      password: hashedPassword,
-      verificationCode,
-      verificationToken,
-    });
-
-    if (user) {
-      const verificationLink = `${process.env.FRONT_APP_URL}/verify?token=${verificationToken}`;
-      confirmEmail(user.email, verificationCode, verificationLink);
-      return res.status(201).json(createResponse(true, user, 'registration completed successfully'));
-    } else {
-      return res.status(400).json(createResponse(false, null, 'user data is not valid'));
-    }
+    const user = await UserService.registerUser(name, email, password);
+    res.status(201).json(createResponse(true, user, 'registration completed successfully'));
   } catch (error) {
-    console.log('error', error);
-    res.status(500).json(createResponse(false, null, 'something went wrong'));
+    const statusCode = error.statusCode || 500;
+    const message = error.message || 'Something went wrong.';
+    return res.status(statusCode).json(createResponse(false, null, message));
   }
 };
 
@@ -54,22 +21,16 @@ const registerUser = async (req, res) => {
 //@route POST /users/verify
 //@access public
 const verifyAccount = async (req, res) => {
-  const { token } = req.query;
-  const { code } = req.body;
   try {
-    const payload = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
-    const user = await userModel.findOne({ email: payload.email, verificationCode: code });
+    const { token } = req.query;
+    const { code } = req.body;
 
-    if (!user) {
-      return res.status(400).json(createResponse(false, null, 'Verification failed. Incorrect verification code or user not found.'));
-    }
-
-    user.isVerified = true;
-    await user.save();
-
+    await UserService.verifyAccount(token, code);
     res.status(200).json(createResponse(true, null, 'Account verified successfully'));
   } catch (error) {
-    res.status(400).json(createResponse(false, null, 'Invalid or expired token'));
+    const statusCode = error.statusCode || 500;
+    const message = error.message || 'Something went wrong.';
+    return res.status(statusCode).json(createResponse(false, null, message));
   }
 };
 
@@ -77,77 +38,64 @@ const verifyAccount = async (req, res) => {
 //@route POST /users/resend-verification
 //@access public
 const resendVerificationCode = async (req, res) => {
-  const { email } = req.body;
-
   try {
-    const user = await userModel.findOne({ email });
+    const { email } = req.body;
 
-    if (!user) {
-      return res.status(404).json(createResponse(false, null, 'User not found.'));
-    }
-    if (user.isVerified) {
-      return res.status(400).json(createResponse(false, null, 'This account has already been verified.'));
-    }
-
-    const verificationCode = Math.floor(100000 + Math.random() * 900000);
-    const verificationToken = jwt.sign({ email }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: process.env.VERIFICATION_EXPIRES });
-
-    user.verificationCode = verificationCode;
-    user.verificationToken = verificationToken;
-    await user.save();
-
-    const verificationLink = `${process.env.FRONT_APP_URL}/verify?token=${verificationToken}`;
-    confirmEmail(email, verificationCode, verificationLink);
-
-    res.json(createResponse(true, null, 'Verification code resent successfully. Please check your email.'));
+    await UserService.resendVerificationCode(email);
+    res.status(200).json(createResponse(true, null, 'Verification code resent successfully. Please check your email.'));
   } catch (error) {
-    console.error('Resend Verification Error:', error);
-    res.status(500).json(createResponse(false, null, 'Failed to resend verification code.'));
+    const statusCode = error.statusCode || 500;
+    const message = error.message || 'Something went wrong.';
+    return res.status(statusCode).json(createResponse(false, null, message));
+  }
+};
+
+//@desc reset user password
+//@route POST /users/reset-password
+//@access public
+const resetPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    await UserService.resetPassword(email);
+    res.status(200).json(createResponse(true, null, 'If your email address is registered in our system, you will receive a password reset link shortly.'));
+  } catch (error) {
+    const statusCode = error.statusCode || 500;
+    const message = error.message || 'Something went wrong during the password reset process.';
+    return res.status(statusCode).json(createResponse(false, null, message));
+  }
+};
+
+//@desc change user password
+//@route POST /users/send-new-password
+//@access public
+const setNewPassword = async (req, res) => {
+  try {
+    const { token } = req.query;
+    const { verificationCode, newPassword } = req.body;
+
+    await UserService.updatePassword(verificationCode, newPassword, token);
+    res.status(200).json(createResponse(true, null, 'Your password has been successfully updated.'));
+  } catch (error) {
+    const statusCode = error.statusCode || 500;
+    const message = error.message || 'Failed to update the password. ';
+    res.status(statusCode).json(createResponse(false, null, message));
   }
 };
 
 //@desc login a user
 //@route POST /users/login
 //@access public
-
 const loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
+    const { accessToken, user } = await UserService.loginUser(email, password);
 
-    if (!email || !password) {
-      return res.status(400).json(createResponse(false, null, 'all fields are mandatory'));
-    }
-
-    const user = await userModel.findOne({ email });
-
-    if (!user || !(await bcrypt.compare(password, user.password))) {
-      return res.status(404).json(createResponse(false, null, 'wrong password or name'));
-    }
-
-    if (user && (await bcrypt.compare(password, user.password))) {
-      const accessToken = jwt.sign(
-        {
-          user: {
-            name: user.name,
-            email: user.email,
-            id: user.id,
-          },
-        },
-        process.env.ACCESS_TOKEN_SECRET,
-        { expiresIn: process.env.JWT_EXPIRES_IN }
-      );
-
-      const responseUser = {
-        name: user.name,
-        email: user.email,
-        id: user.id,
-      };
-
-      res.status(200).json(createResponse(true, { accessToken, user: responseUser }, 'login successful'));
-    }
+    res.status(200).json(createResponse(true, { accessToken, user }, 'Login successful'));
   } catch (error) {
-    console.log('error', error);
-    res.status(500).json(createResponse(false, null, 'something went wrong'));
+    const statusCode = error.statusCode || 500;
+    const message = error.message || 'Something went wrong.';
+    return res.status(statusCode).json(createResponse(false, null, message));
   }
 };
 
@@ -171,4 +119,6 @@ module.exports = {
   test,
   verifyAccount,
   resendVerificationCode,
+  resetPassword,
+  setNewPassword,
 };
