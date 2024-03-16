@@ -47,6 +47,21 @@ const resendVerificationCode = async (req, res) => {
   }
 };
 
+//@desc reset user password
+//@route POST /users/reset-password
+//@access public
+const resetPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+    await UserService.resetPassword(email);
+    res.status(200).json(createResponse(true, null, 'If your email address is registered in our system, you will receive a password reset link shortly.'));
+  } catch (error) {
+    const statusCode = error.statusCode || 500;
+    const message = error.message || 'Something went wrong during the password reset process.';
+    return res.status(statusCode).json(createResponse(false, null, message));
+  }
+};
+
 //@desc login a user
 //@route POST /users/login
 //@access public
@@ -82,4 +97,5 @@ module.exports = {
   test,
   verifyAccount,
   resendVerificationCode,
+  resetPassword,
 };

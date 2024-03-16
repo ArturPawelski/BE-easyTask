@@ -1,7 +1,7 @@
 const bcrypt = require('bcrypt');
 require('dotenv').config();
 const jwt = require('jsonwebtoken');
-const { confirmEmail } = require('../../utils/emailUtils');
+const { confirmEmail, sendPasswordResetCode } = require('../../utils/emailUtils');
 const CustomError = require('../../utils/customError');
 const userDataService = require('./userDataService');
 
@@ -85,6 +85,34 @@ class UserService {
       await userDataService.updateUser({ _id: user._id }, { verificationCode, verificationToken });
 
       confirmEmail(email, verificationCode, verificationLink);
+
+      return true;
+    } catch (error) {
+      throw new CustomError(error.message, error.statusCode || 500);
+    }
+  }
+
+  async resetPassword(email) {
+    try {
+      const user = await userDataService.findUser({ email });
+
+      if (!user) {
+        return true;
+      }
+      if (user.isVerified === false) {
+        throw new CustomError('This account has not been verified.', 400);
+      }
+
+      const verificationCode = Math.floor(100000 + Math.random() * 900000);
+      const resetToken = jwt.sign({ email }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: process.env.VERIFICATION_EXPIRES });
+      const resetLink = `${process.env.FRONT_APP_URL}/reset-password?token=${resetToken}`;
+
+      await userDataService.updateUser(user._id, {
+        resetPasswordToken: resetToken,
+        resetPasswordVerificationCode: verificationCode,
+      });
+
+      await sendPasswordResetCode(user.email, verificationCode, resetLink);
 
       return true;
     } catch (error) {

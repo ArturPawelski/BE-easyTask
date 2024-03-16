@@ -11,18 +11,19 @@ let transporter = nodemailer.createTransport({
   },
 });
 
-async function sendPasswordResetCode(toEmail, verificationCode) {
+async function sendPasswordResetCode(toEmail, verificationCode, resetLink) {
   try {
     let info = await transporter.sendMail({
       from: 'noreply@flowblog.com',
       to: toEmail,
       subject: 'Reset your password',
-      html: `<p>A password reset request has been sent from your account.</p>
-               <p>Use this verification code to reset your password. It will expire in 10 minutes.</p>
-               <p><strong>${verificationCode}</strong></p>
-               <p>If you didn't request a password reset, ignore this email.</p>`,
+      html: `<p>We received a request to reset the password for your account.</p>
+      <p>To reset your password, please follow the link below:</p>
+      <p><a href="${resetLink}" target="_blank">Reset My Password</a></p>
+      <p>After clicking the link, you will be prompted to enter the verification code and your new password.</p>
+      <p>Your Verification Code is: <strong>${verificationCode}</strong></p>
+      <p>This verification code will expire in 5 minutes. If you did not request a password reset, please ignore this email or contact support if you have concerns.</p>`,
     });
-    console.log(info);
   } catch (error) {
     console.error(error);
   }
