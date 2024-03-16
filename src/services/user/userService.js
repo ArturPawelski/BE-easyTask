@@ -39,10 +39,10 @@ class UserService {
     }
   }
 
-  async verifyAccount(token, verificationCode) {
+  async verifyAccount(verificationToken, verificationCode) {
     try {
-      const payload = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
-      const user = await userDataService.findUser({ email: payload.email, verificationCode });
+      const payload = jwt.verify(verificationToken, process.env.ACCESS_TOKEN_SECRET);
+      const user = await userDataService.findUser({ email: payload.email, verificationCode, verificationToken });
 
       if (!user) {
         throw new CustomError('Verification failed. Incorrect verification code or user not found.', 400);
@@ -116,6 +116,39 @@ class UserService {
 
       return true;
     } catch (error) {
+      throw new CustomError(error.message, error.statusCode || 500);
+    }
+  }
+
+  async updatePassword(resetPasswordVerificationCode, newPassword, resetPasswordToken) {
+    try {
+      const payload = jwt.verify(resetPasswordToken, process.env.ACCESS_TOKEN_SECRET);
+
+      const user = await userDataService.findUser({ email: payload.email, resetPasswordVerificationCode, resetPasswordToken });
+
+      if (!user) {
+        throw new CustomError('Verification failed.', 400);
+      }
+
+      const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+      const updatedUser = await userDataService.updateUser(
+        { _id: user._id },
+        {
+          password: hashedPassword,
+          resetPasswordToken: null,
+          resetPasswordVerificationCode: null,
+        }
+      );
+      if (!updatedUser) {
+        throw new CustomError('Failed to update password.', 500);
+      }
+
+      return true;
+    } catch (error) {
+      if (error instanceof jwt.JsonWebTokenError) {
+        throw new CustomError('Invalid or expired token', 400);
+      }
       throw new CustomError(error.message, error.statusCode || 500);
     }
   }

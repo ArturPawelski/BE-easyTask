@@ -7,6 +7,7 @@ const UserService = require('../services/user/userService');
 const registerUser = async (req, res) => {
   try {
     const { name, email, password } = req.body;
+
     const user = await UserService.registerUser(name, email, password);
     res.status(201).json(createResponse(true, user, 'registration completed successfully'));
   } catch (error) {
@@ -23,6 +24,7 @@ const verifyAccount = async (req, res) => {
   try {
     const { token } = req.query;
     const { code } = req.body;
+
     await UserService.verifyAccount(token, code);
     res.status(200).json(createResponse(true, null, 'Account verified successfully'));
   } catch (error) {
@@ -38,6 +40,7 @@ const verifyAccount = async (req, res) => {
 const resendVerificationCode = async (req, res) => {
   try {
     const { email } = req.body;
+
     await UserService.resendVerificationCode(email);
     res.status(200).json(createResponse(true, null, 'Verification code resent successfully. Please check your email.'));
   } catch (error) {
@@ -53,12 +56,30 @@ const resendVerificationCode = async (req, res) => {
 const resetPassword = async (req, res) => {
   try {
     const { email } = req.body;
+
     await UserService.resetPassword(email);
     res.status(200).json(createResponse(true, null, 'If your email address is registered in our system, you will receive a password reset link shortly.'));
   } catch (error) {
     const statusCode = error.statusCode || 500;
     const message = error.message || 'Something went wrong during the password reset process.';
     return res.status(statusCode).json(createResponse(false, null, message));
+  }
+};
+
+//@desc change user password
+//@route POST /users/send-new-password
+//@access public
+const setNewPassword = async (req, res) => {
+  try {
+    const { token } = req.query;
+    const { verificationCode, newPassword } = req.body;
+
+    await UserService.updatePassword(verificationCode, newPassword, token);
+    res.status(200).json(createResponse(true, null, 'Your password has been successfully updated.'));
+  } catch (error) {
+    const statusCode = error.statusCode || 500;
+    const message = error.message || 'Failed to update the password. ';
+    res.status(statusCode).json(createResponse(false, null, message));
   }
 };
 
@@ -69,6 +90,7 @@ const loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
     const { accessToken, user } = await UserService.loginUser(email, password);
+
     res.status(200).json(createResponse(true, { accessToken, user }, 'Login successful'));
   } catch (error) {
     const statusCode = error.statusCode || 500;
@@ -98,4 +120,5 @@ module.exports = {
   verifyAccount,
   resendVerificationCode,
   resetPassword,
+  setNewPassword,
 };
