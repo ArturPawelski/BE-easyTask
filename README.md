@@ -17,3 +17,6 @@ The `Backend EasyTask` repository contains the backend part of the EasyTask appl
 - **JWT (JSON Web Tokens)** - Used for authorization and information exchange between parties.
 - **Joi** - A library for input validation, useful for checking the correctness of data sent to the server.
 - **Nodemailer** - A module for Node.js that allows easy email sending.
+
+## Architecture 🏛️
+Backend EasyTask is designed using the Model-View-Controller (MVC) architectural pattern.
