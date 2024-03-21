@@ -1,9 +1,10 @@
 const bcrypt = require('bcrypt');
 require('dotenv').config();
-const jwt = require('jsonwebtoken');
 const { confirmEmail, sendPasswordResetCode } = require('../../utils/emailUtils');
 const CustomError = require('../../utils/customError');
 const userDataService = require('./userDataService');
+const { generateToken, verifyToken } = require('../../utils/tokenUtils');
+const { generateRandomCode } = require('../../utils/randomCodeUtils');
 
 class UserService {
   async registerUser(name, email, password) {
@@ -11,14 +12,15 @@ class UserService {
       const userAvailable = await userDataService.findUser({
         $or: [{ email }, { name }],
       });
+
       if (userAvailable) {
         throw new CustomError('User already registered', 409);
       }
 
       const hashedPassword = await bcrypt.hash(password, 10);
-      const verificationToken = jwt.sign({ email }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: process.env.VERIFICATION_EXPIRES });
-      const verificationCode = Math.floor(100000 + Math.random() * 900000);
 
+      const verificationToken = generateToken(email);
+      const verificationCode = generateRandomCode();
       const verificationLink = `${process.env.FRONT_APP_URL}/verify?token=${verificationToken}`;
 
       const user = await userDataService.createUser({
@@ -28,6 +30,7 @@ class UserService {
         verificationCode,
         verificationToken,
       });
+
       if (!user) {
         throw new CustomError('User data is not valid', 400);
       }
@@ -41,7 +44,7 @@ class UserService {
 
   async verifyAccount(verificationToken, verificationCode) {
     try {
-      const payload = jwt.verify(verificationToken, process.env.ACCESS_TOKEN_SECRET);
+      const payload = verifyToken(verificationToken);
       const user = await userDataService.findUser({ email: payload.email, verificationCode, verificationToken });
 
       if (!user) {
@@ -52,7 +55,7 @@ class UserService {
         throw new CustomError('User already verified.', 400);
       }
 
-      const updatedUser = await userDataService.updateUser({ _id: user._id }, { isVerified: true });
+      const updatedUser = await userDataService.updateUser({ _id: user._id }, { isVerified: true, verificationCode: null, verificationToken: null });
 
       if (!updatedUser) {
         throw new CustomError('Failed to update user verification status.', 500);
@@ -78,8 +81,8 @@ class UserService {
         throw new CustomError('This account has already been verified.', 400);
       }
 
-      const verificationCode = Math.floor(100000 + Math.random() * 900000);
-      const verificationToken = jwt.sign({ email }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: process.env.VERIFICATION_EXPIRES });
+      const verificationCode = generateRandomCode();
+      const verificationToken = generateToken(email);
       const verificationLink = `${process.env.FRONT_APP_URL}/verify?token=${verificationToken}`;
 
       await userDataService.updateUser({ _id: user._id }, { verificationCode, verificationToken });
@@ -103,8 +106,8 @@ class UserService {
         throw new CustomError('This account has not been verified.', 400);
       }
 
-      const verificationCode = Math.floor(100000 + Math.random() * 900000);
-      const resetToken = jwt.sign({ email }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: process.env.VERIFICATION_EXPIRES });
+      const verificationCode = generateRandomCode();
+      const resetToken = generateToken(email);
       const resetLink = `${process.env.FRONT_APP_URL}/reset-password?token=${resetToken}`;
 
       await userDataService.updateUser(user._id, {
@@ -122,7 +125,7 @@ class UserService {
 
   async updatePassword(resetPasswordVerificationCode, newPassword, resetPasswordToken) {
     try {
-      const payload = jwt.verify(resetPasswordToken, process.env.ACCESS_TOKEN_SECRET);
+      const payload = verifyToken(resetPasswordToken);
 
       const user = await userDataService.findUser({ email: payload.email, resetPasswordVerificationCode, resetPasswordToken });
 

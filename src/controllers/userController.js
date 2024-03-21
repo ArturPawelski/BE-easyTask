@@ -99,24 +99,9 @@ const loginUser = async (req, res) => {
   }
 };
 
-//@desc test for authorization
-//@route GET /users/test
-//@access private
-
-const test = async (req, res) => {
-  try {
-    req.user;
-    res.status(200).json(createResponse(true, req.user, 'authorization was successfully'));
-  } catch (error) {
-    console.log(error);
-    res.sendStatus(500);
-  }
-};
-
 module.exports = {
   registerUser,
   loginUser,
-  test,
   verifyAccount,
   resendVerificationCode,
   resetPassword,
