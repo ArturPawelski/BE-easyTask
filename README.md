@@ -1,15 +1,15 @@
 # Backend EasyTask
 
-## Project Description
+## Project Description 📝
 
 The `Backend EasyTask` repository contains the backend part of the EasyTask application, which is planned to be a Kanban board for organizing tasks. The project is currently under construction.
 
-## Current Features
+## Current Features 🖍️
 
 - User login and authorization.
 - Email confirmation and password reset.
 
-## Tech Stack
+## Tech Stack 🖥️
 
 - **Express** - A web application framework for Node.js, making it easier to create HTTP servers.
 - **MongoDB** - A NoSQL database used for storing application data.
