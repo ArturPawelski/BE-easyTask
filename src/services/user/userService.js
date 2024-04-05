@@ -5,6 +5,7 @@ const CustomError = require('../../utils/customError');
 const userDataService = require('./userDataService');
 const { generateToken, verifyToken } = require('../../utils/tokenUtils');
 const { generateRandomCode } = require('../../utils/randomCodeUtils');
+const jwt = require('jsonwebtoken');
 
 class UserService {
   async registerUser(name, email, password) {
@@ -21,7 +22,7 @@ class UserService {
 
       const verificationToken = generateToken(email);
       const verificationCode = generateRandomCode();
-      const verificationLink = `${process.env.FRONT_APP_URL}/verify?token=${verificationToken}`;
+      const verificationLink = `${process.env.FRONT_APP_URL}/auth/verify?token=${verificationToken}`;
 
       const user = await userDataService.createUser({
         name,
@@ -45,6 +46,7 @@ class UserService {
   async verifyAccount(verificationToken, verificationCode) {
     try {
       const payload = verifyToken(verificationToken);
+
       const user = await userDataService.findUser({ email: payload.email, verificationCode, verificationToken });
 
       if (!user) {
