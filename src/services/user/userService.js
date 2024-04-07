@@ -85,7 +85,7 @@ class UserService {
 
       const verificationCode = generateRandomCode();
       const verificationToken = generateToken(email);
-      const verificationLink = `${process.env.FRONT_APP_URL}/verify?token=${verificationToken}`;
+      const verificationLink = `${process.env.FRONT_APP_URL}/auth/verify?token=${verificationToken}`;
 
       await userDataService.updateUser({ _id: user._id }, { verificationCode, verificationToken });
 
