@@ -106,6 +106,36 @@ const loginUser = async (req, res) => {
   }
 };
 
+//@desc check if user is logged in
+//@route POST /users/check-session
+//@access public/private
+const checkSession = async (req, res) => {
+  try {
+    if (req.user) {
+      res.status(200).json(createResponse(true, { user: req.user }, 'User is logged in.'));
+    } else {
+      res.status(401).json(createResponse(false, null, 'User is not logged in.'));
+    }
+  } catch (error) {
+    const statusCode = error.statusCode || 500;
+    const message = error.message || 'Something went wrong.';
+    return res.status(statusCode).json(createResponse(false, null, message));
+  }
+};
+
+//@desc logout
+//@route POST /users/logout
+//@access private
+const logout = async (req, res) => {
+  try {
+    if (req.user) return true;
+  } catch (error) {
+    const statusCode = error.statusCode || 500;
+    const message = error.message || 'Something went wrong.';
+    return res.status(statusCode).json(createResponse(false, null, message));
+  }
+};
+
 module.exports = {
   registerUser,
   loginUser,
@@ -113,4 +143,6 @@ module.exports = {
   resendVerificationCode,
   resetPassword,
   setNewPassword,
+  checkSession,
+  logout,
 };
