@@ -91,7 +91,14 @@ const loginUser = async (req, res) => {
     const { email, password } = req.body;
     const { accessToken, user } = await UserService.loginUser(email, password);
 
-    res.status(200).json(createResponse(true, { accessToken, user }, 'Login successful'));
+    res.cookie('accessToken', accessToken, {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'strict',
+      maxAge: 24 * 60 * 60 * 1000,
+    });
+
+    res.status(200).json(createResponse(true, { user }, 'Login successful'));
   } catch (error) {
     const statusCode = error.statusCode || 500;
     const message = error.message || 'Something went wrong.';

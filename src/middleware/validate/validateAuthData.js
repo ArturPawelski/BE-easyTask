@@ -18,7 +18,7 @@ const registerUserSchema = Joi.object({
   confirmEmail: Joi.string().valid(Joi.ref('email')).required().messages({
     'any.only': 'Field "confirmEmail" must match the "email"',
   }),
-  password: Joi.string().min(4).max(30).required().messages({
+  password: Joi.string().min(10).max(40).required().messages({
     'string.base': 'Field "password" should be a text type',
     'string.empty': 'Field "password" cannot be empty',
     'string.min': 'Field "password" must contain at least 4 characters',
