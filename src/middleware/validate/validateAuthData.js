@@ -42,6 +42,22 @@ const loginSchema = Joi.object({
   }),
 });
 
+const verifyCodeSchema = Joi.object({
+  code: Joi.string().required().length(6).messages({
+    'string.base': 'Field "code" should be a text type',
+    'string.length': 'Field "code" must be exactly 6 characters long',
+    'any.required': 'Field "code" is required',
+  }),
+});
+
+const resendEmailSchema = Joi.object({
+  email: Joi.string().email().required().messages({
+    'string.base': 'Field "email" should be a text type',
+    'string.email': 'Field "email" must be a valid email address',
+    'any.required': 'Field "email" is required',
+  }),
+});
+
 function validateUserRegister(req, res, next) {
   const result = registerUserSchema.validate(req.body);
   if (result.error) {
@@ -58,4 +74,20 @@ function validateLogin(req, res, next) {
   next();
 }
 
-module.exports = { validateUserRegister, validateLogin };
+function validateVerifyAccount(req, res, next) {
+  const result = verifyCodeSchema.validate(req.body);
+  if (result.error) {
+    return res.status(400).json(createResponse(false, null, result.error.details[0].message));
+  }
+  next();
+}
+
+function validateResendVerificationCode(req, res, next) {
+  const result = resendEmailSchema.validate(req.body);
+  if (result.error) {
+    return res.status(400).json(createResponse(false, null, result.error.details[0].message));
+  }
+  next();
+}
+
+module.exports = { validateUserRegister, validateLogin, validateVerifyAccount, validateResendVerificationCode };

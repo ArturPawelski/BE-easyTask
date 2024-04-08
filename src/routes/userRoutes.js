@@ -1,14 +1,14 @@
 const express = require('express');
 const { registerUser, loginUser, verifyAccount, resendVerificationCode, resetPassword, setNewPassword } = require('../controllers/userController');
-const { validateUserRegister, validateLogin } = require('../middleware/validate/validateAuthData');
+const { validateUserRegister, validateLogin, validateVerifyAccount, validateResendVerificationCode } = require('../middleware/validate/validateAuthData');
 
 const userRouter = express.Router();
 
 userRouter.post('/register', validateUserRegister, registerUser);
 
-userRouter.post('/verify', verifyAccount);
+userRouter.post('/verify', validateVerifyAccount, verifyAccount);
 
-userRouter.post('/resend-verification', resendVerificationCode);
+userRouter.post('/resend-verification', validateResendVerificationCode, resendVerificationCode);
 
 userRouter.post('/reset-password', resetPassword);
 
