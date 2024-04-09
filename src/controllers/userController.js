@@ -94,8 +94,8 @@ const loginUser = async (req, res) => {
     res.cookie('accessToken', accessToken, {
       httpOnly: true,
       secure: true,
-      sameSite: 'strict',
-      maxAge: 24 * 60 * 60 * 1000,
+      sameSite: 'Strict',
+      maxAge: 190000,
     });
 
     res.status(200).json(createResponse(true, { user }, 'Login successful'));
@@ -128,7 +128,18 @@ const checkSession = async (req, res) => {
 //@access private
 const logout = async (req, res) => {
   try {
-    if (req.user) return true;
+    const token = req.token;
+
+    await UserService.logoutUser(token);
+
+    res.cookie('accessToken', '', {
+      maxAge: 0,
+      httpOnly: true,
+      secure: true,
+      sameSite: 'Strict',
+    });
+
+    res.status(200).json(createResponse(true, null, 'User is logged out.'));
   } catch (error) {
     const statusCode = error.statusCode || 500;
     const message = error.message || 'Something went wrong.';

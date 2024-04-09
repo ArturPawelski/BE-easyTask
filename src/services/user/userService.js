@@ -185,6 +185,25 @@ class UserService {
       throw new CustomError(error.message, error.statusCode || 500);
     }
   }
+
+  async logoutUser(token) {
+    try {
+      const checkIfBlacklisted = await userDataService.findInvalidatedToken({ token });
+
+      if (checkIfBlacklisted) {
+        throw new CustomError('already logged out', 204);
+      }
+
+      const decoded = jwt.decode(token);
+      const expiresAt = new Date(decoded.exp * 1000);
+
+      await userDataService.saveInvalidatedToken({ token, expiresAt });
+
+      return true;
+    } catch (error) {
+      throw new CustomError(error.message, error.statusCode || 500);
+    }
+  }
 }
 
 module.exports = new UserService();

@@ -1,16 +1,22 @@
 const mongoose = require('mongoose');
 
-const invalidatedTokenSchema = new mongoose.Schema(
+const invalidatedTokenSchema = mongoose.Schema(
   {
     token: {
       type: String,
       required: true,
+      unique: true,
       ref: 'Users',
+    },
+    expiresAt: {
+      type: Date,
+      required: true,
+      index: { expires: 0 },
     },
   },
   { timestamps: true }
 );
 
-const invalidatedToken = mongoose.model('invalidatedToken', invalidatedTokenSchema);
+const invalidatedTokenModel = mongoose.model('invalidatedToken', invalidatedTokenSchema);
 
-module.exports = invalidatedToken;
+module.exports = invalidatedTokenModel;

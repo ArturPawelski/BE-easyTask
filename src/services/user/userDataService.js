@@ -1,4 +1,5 @@
 const userModel = require('../../models/userModel');
+const invalidatedTokenModel = require('../../models/invalidatedTokenModel');
 
 class UserDataService {
   async findUser(query) {
@@ -31,6 +32,14 @@ class UserDataService {
 
   async deleteManyUsers(filter) {
     return userModel.deleteMany(filter);
+  }
+
+  async findInvalidatedToken(query) {
+    return invalidatedTokenModel.findOne(query);
+  }
+
+  async saveInvalidatedToken(data) {
+    return invalidatedTokenModel.create(data);
   }
 }
 
