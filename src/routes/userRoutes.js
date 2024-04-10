@@ -19,6 +19,6 @@ userRouter.post('/login', validateLogin, loginUser);
 
 userRouter.post('/logout', validateTokenHanlder, logout);
 
-userRouter.post('/check-session', validateTokenHanlder, checkSession);
+userRouter.get('/check-session', validateTokenHanlder, checkSession);
 
 module.exports = userRouter;

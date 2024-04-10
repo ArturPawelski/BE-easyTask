@@ -10,7 +10,7 @@ const registerUser = async (req, res) => {
     const { name, email, password } = req.body;
 
     const user = await UserService.registerUser(name, email, password);
-    res.status(201).json(createResponse(true, user, 'registration completed successfully'));
+    res.status(201).json(createResponse(true, null, 'registration completed successfully'));
   } catch (error) {
     const statusCode = error.statusCode || 500;
     const message = error.message || 'Something went wrong.';
@@ -90,7 +90,7 @@ const setNewPassword = async (req, res) => {
 const loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
-    const { accessToken, user } = await UserService.loginUser(email, password);
+    const { accessToken } = await UserService.loginUser(email, password);
 
     res.cookie('accessToken', accessToken, {
       httpOnly: true,
@@ -99,7 +99,7 @@ const loginUser = async (req, res) => {
       maxAge: process.env.COOKIE_MAX_AGE,
     });
 
-    res.status(200).json(createResponse(true, { user }, 'Login successful'));
+    res.status(200).json(createResponse(true, null, 'Login successful'));
   } catch (error) {
     const statusCode = error.statusCode || 500;
     const message = error.message || 'Something went wrong.';
@@ -113,7 +113,8 @@ const loginUser = async (req, res) => {
 const checkSession = async (req, res) => {
   try {
     if (req.user) {
-      res.status(200).json(createResponse(true, { user: req.user }, 'User is logged in.'));
+      const { name, email, id } = req.user;
+      res.status(200).json(createResponse(true, { name, email, id }, 'User is logged in.'));
     } else {
       res.status(401).json(createResponse(false, null, 'User is not logged in.'));
     }

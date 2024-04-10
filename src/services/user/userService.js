@@ -179,7 +179,7 @@ class UserService {
           { expiresIn: process.env.JWT_EXPIRES_IN }
         );
 
-        return { accessToken, user: { name: user.name, email: user.email, id: user._id } };
+        return { accessToken };
       }
     } catch (error) {
       throw new CustomError(error.message, error.statusCode || 500);
