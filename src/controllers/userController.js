@@ -1,3 +1,4 @@
+require('dotenv').config();
 const createResponse = require('../services/responseDTO');
 const UserService = require('../services/user/userService');
 
@@ -95,7 +96,7 @@ const loginUser = async (req, res) => {
       httpOnly: true,
       secure: true,
       sameSite: 'Strict',
-      maxAge: 190000,
+      maxAge: process.env.COOKIE_MAX_AGE,
     });
 
     res.status(200).json(createResponse(true, { user }, 'Login successful'));

@@ -6,7 +6,6 @@ const invalidatedTokenSchema = mongoose.Schema(
       type: String,
       required: true,
       unique: true,
-      ref: 'Users',
     },
     expiresAt: {
       type: Date,
