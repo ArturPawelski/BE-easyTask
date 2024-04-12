@@ -5,6 +5,7 @@ const CustomError = require('../../utils/customError');
 const userDataService = require('./userDataService');
 const { generateToken, verifyToken } = require('../../utils/tokenUtils');
 const { generateRandomCode } = require('../../utils/randomCodeUtils');
+const jwt = require('jsonwebtoken');
 
 class UserService {
   async registerUser(name, email, password) {
@@ -21,7 +22,7 @@ class UserService {
 
       const verificationToken = generateToken(email);
       const verificationCode = generateRandomCode();
-      const verificationLink = `${process.env.FRONT_APP_URL}/verify?token=${verificationToken}`;
+      const verificationLink = `${process.env.FRONT_APP_URL}/auth/verify?token=${verificationToken}`;
 
       const user = await userDataService.createUser({
         name,
@@ -45,6 +46,7 @@ class UserService {
   async verifyAccount(verificationToken, verificationCode) {
     try {
       const payload = verifyToken(verificationToken);
+
       const user = await userDataService.findUser({ email: payload.email, verificationCode, verificationToken });
 
       if (!user) {
@@ -83,7 +85,7 @@ class UserService {
 
       const verificationCode = generateRandomCode();
       const verificationToken = generateToken(email);
-      const verificationLink = `${process.env.FRONT_APP_URL}/verify?token=${verificationToken}`;
+      const verificationLink = `${process.env.FRONT_APP_URL}/auth/verify?token=${verificationToken}`;
 
       await userDataService.updateUser({ _id: user._id }, { verificationCode, verificationToken });
 
@@ -177,8 +179,27 @@ class UserService {
           { expiresIn: process.env.JWT_EXPIRES_IN }
         );
 
-        return { accessToken, user: { name: user.name, email: user.email, id: user._id } };
+        return { accessToken };
       }
+    } catch (error) {
+      throw new CustomError(error.message, error.statusCode || 500);
+    }
+  }
+
+  async logoutUser(token) {
+    try {
+      const checkIfBlacklisted = await userDataService.findInvalidatedToken({ token });
+
+      if (checkIfBlacklisted) {
+        throw new CustomError('already logged out', 204);
+      }
+
+      const decoded = jwt.decode(token);
+      const expiresAt = new Date(decoded.exp * 1000);
+
+      await userDataService.saveInvalidatedToken({ token, expiresAt });
+
+      return true;
     } catch (error) {
       throw new CustomError(error.message, error.statusCode || 500);
     }

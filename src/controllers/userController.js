@@ -1,3 +1,4 @@
+require('dotenv').config();
 const createResponse = require('../services/responseDTO');
 const UserService = require('../services/user/userService');
 
@@ -9,7 +10,7 @@ const registerUser = async (req, res) => {
     const { name, email, password } = req.body;
 
     const user = await UserService.registerUser(name, email, password);
-    res.status(201).json(createResponse(true, user, 'registration completed successfully'));
+    res.status(201).json(createResponse(true, null, 'registration completed successfully'));
   } catch (error) {
     const statusCode = error.statusCode || 500;
     const message = error.message || 'Something went wrong.';
@@ -89,9 +90,58 @@ const setNewPassword = async (req, res) => {
 const loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
-    const { accessToken, user } = await UserService.loginUser(email, password);
+    const { accessToken } = await UserService.loginUser(email, password);
 
-    res.status(200).json(createResponse(true, { accessToken, user }, 'Login successful'));
+    res.cookie('accessToken', accessToken, {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'Strict',
+      maxAge: process.env.COOKIE_MAX_AGE,
+    });
+
+    res.status(200).json(createResponse(true, null, 'Login successful'));
+  } catch (error) {
+    const statusCode = error.statusCode || 500;
+    const message = error.message || 'Something went wrong.';
+    return res.status(statusCode).json(createResponse(false, null, message));
+  }
+};
+
+//@desc check if user is logged in
+//@route POST /users/check-session
+//@access public/private
+const checkSession = async (req, res) => {
+  try {
+    if (req.user) {
+      const { name, email, id } = req.user;
+      res.status(200).json(createResponse(true, { name, email, id }, 'User is logged in.'));
+    } else {
+      res.status(401).json(createResponse(false, null, 'User is not logged in.'));
+    }
+  } catch (error) {
+    const statusCode = error.statusCode || 500;
+    const message = error.message || 'Something went wrong.';
+    return res.status(statusCode).json(createResponse(false, null, message));
+  }
+};
+
+//@desc logout
+//@route POST /users/logout
+//@access private
+const logout = async (req, res) => {
+  try {
+    const token = req.token;
+
+    await UserService.logoutUser(token);
+
+    res.cookie('accessToken', '', {
+      maxAge: 0,
+      httpOnly: true,
+      secure: true,
+      sameSite: 'Strict',
+    });
+
+    res.status(200).json(createResponse(true, null, 'User is logged out.'));
   } catch (error) {
     const statusCode = error.statusCode || 500;
     const message = error.message || 'Something went wrong.';
@@ -106,4 +156,6 @@ module.exports = {
   resendVerificationCode,
   resetPassword,
   setNewPassword,
+  checkSession,
+  logout,
 };
