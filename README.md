@@ -21,6 +21,6 @@ The `Backend EasyTask` repository contains the backend part of the EasyTask appl
 ## Architecture 🏛️
 Backend EasyTask is designed using the Model-View-Controller (MVC) architectural pattern.
 
-##Frontend
+## Frontend
 
 https://github.com/ArturPawelski/FE-easyTask
