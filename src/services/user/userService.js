@@ -166,6 +166,10 @@ class UserService {
         throw new CustomError('Wrong email or password.', 404);
       }
 
+      if (!user.isVerified) {
+        throw new CustomError('Your account has not been verified. Please check your email for verification instructions.', 403);
+      }
+
       if (user && (await bcrypt.compare(password, user.password))) {
         const accessToken = jwt.sign(
           {

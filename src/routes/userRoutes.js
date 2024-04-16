@@ -17,7 +17,7 @@ userRouter.post('/send-new-password', setNewPassword);
 
 userRouter.post('/login', validateLogin, loginUser);
 
-userRouter.post('/logout', validateTokenHanlder, logout);
+userRouter.delete('/logout', validateTokenHanlder, logout);
 
 userRouter.get('/check-session', validateTokenHanlder, checkSession);
 
