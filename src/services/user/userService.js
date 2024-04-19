@@ -104,13 +104,14 @@ class UserService {
       if (!user) {
         return true;
       }
+
       if (user.isVerified === false) {
         throw new CustomError('This account has not been verified.', 400);
       }
 
       const verificationCode = generateRandomCode();
       const resetToken = generateToken(email);
-      const resetLink = `${process.env.FRONT_APP_URL}/reset-password?token=${resetToken}`;
+      const resetLink = `${process.env.FRONT_APP_URL}/auth/reset-password?token=${resetToken}`;
 
       await userDataService.updateUser(user._id, {
         resetPasswordToken: resetToken,
@@ -164,6 +165,10 @@ class UserService {
 
       if (!user || !(await bcrypt.compare(password, user.password))) {
         throw new CustomError('Wrong email or password.', 404);
+      }
+
+      if (!user.isVerified) {
+        throw new CustomError('Your account has not been verified. Please check your email for verification instructions.', 403);
       }
 
       if (user && (await bcrypt.compare(password, user.password))) {
