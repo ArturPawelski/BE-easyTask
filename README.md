@@ -6,8 +6,12 @@ The `Backend EasyTask` repository contains the backend part of the EasyTask appl
 
 ## Current Features 🖍️
 
-- User login and authorization.
-- Email confirmation and password reset.
+- **User Registration and Login**: Allows users to register and log in, ensuring data integrity through extensive validation.
+- **JWT-Based Authentication**: Manages secure sessions and authenticates requests using HTTP-only JSON Web Tokens.
+- **Email Verification**: Sends verification emails at registration and allows users to resend these emails as needed.
+- **Password Management**: Enables users to reset forgotten passwords and set new ones through a secure, token-based process.
+- **Session Management**: Checks and manages user sessions to maintain secure access control.
+- **Data Validation**: Uses Joi to rigorously validate all incoming data, ensuring correctness and security.
 
 ## Tech Stack 🖥️
 
