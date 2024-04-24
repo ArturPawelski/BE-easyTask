@@ -16,6 +16,7 @@ jest.mock('../../../services/responseDTO', () =>
 describe('UserController', () => {
   describe('registerUser', () => {
     let req, res;
+
     beforeEach(() => {
       req = {
         body: {
@@ -31,6 +32,7 @@ describe('UserController', () => {
       jest.clearAllMocks();
     });
 
+    //userController
     it('should register a new user successfully', async () => {
       userService.registerUser.mockResolvedValue({
         name: req.body.name,
@@ -48,6 +50,7 @@ describe('UserController', () => {
       });
     });
 
+    //userController
     it('should handle errors when registration fails', async () => {
       const error = new Error('User already registered');
       error.statusCode = 409;
