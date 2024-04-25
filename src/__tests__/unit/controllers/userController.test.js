@@ -34,12 +34,14 @@ describe('UserController', () => {
 
     //userController
     it('should register a new user successfully', async () => {
+      //setup
       userService.registerUser.mockResolvedValue({
         name: req.body.name,
         email: req.body.email,
         password: req.body.password,
       });
 
+      // Execute the function and verify the result
       await registerUser(req, res);
 
       expect(res.status).toHaveBeenCalledWith(201);
@@ -52,13 +54,13 @@ describe('UserController', () => {
 
     //userController
     it('should handle errors when registration fails', async () => {
+      //setup
       const error = new Error('User already registered');
       error.statusCode = 409;
-
       userService.registerUser.mockRejectedValue(error); // simulate an error
-      await registerUser(req, res);
 
-      // console.log('JSON called with:', res.json.mock.calls);
+      // Execute the function and verify the result
+      await registerUser(req, res);
 
       expect(res.status).toHaveBeenCalledWith(409);
       expect(res.json).toHaveBeenCalledWith({
@@ -69,3 +71,5 @@ describe('UserController', () => {
     });
   });
 });
+
+// console.log('JSON called with:', res.json.mock.calls);

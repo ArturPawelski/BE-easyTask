@@ -53,6 +53,7 @@ describe('User Controller Integration Tests', () => {
 
     //register
     it('should send error if user email already exists', async () => {
+      //setup
       await mongoose.model('Users').create({
         name: 'ExistingUser',
         email: 'existing@example.com',
@@ -61,6 +62,7 @@ describe('User Controller Integration Tests', () => {
       });
       await mongoose.model('Users').updateOne({ email: 'existing@example.com' }, { $set: { isVerified: true } });
 
+      // Execute and verify the result
       const res = await request(server).post('/users/register').send({
         name: 'NewUser',
         email: 'existing@example.com',
@@ -76,6 +78,7 @@ describe('User Controller Integration Tests', () => {
 
     //register
     it('should send error if user username already exists', async () => {
+      //setup
       await mongoose.model('Users').create({
         name: 'ExistingUser',
         email: 'existing@example.com',
@@ -84,6 +87,7 @@ describe('User Controller Integration Tests', () => {
       });
       await mongoose.model('Users').updateOne({ email: 'existing@example.com' }, { $set: { isVerified: true } });
 
+      // Execute and verify the result
       const res = await request(server).post('/users/register').send({
         name: 'ExistingUser',
         email: 'newuser@example.com',
@@ -100,6 +104,7 @@ describe('User Controller Integration Tests', () => {
 
   //login
   it('should login a user and send http only token ', async () => {
+    //setup
     await mongoose.model('Users').create({
       name: 'ExistingUser',
       email: 'existing@example.com',
@@ -109,6 +114,7 @@ describe('User Controller Integration Tests', () => {
 
     await mongoose.model('Users').updateOne({ email: 'existing@example.com' }, { $set: { isVerified: true } });
 
+    // Execute and verify the result
     const loginRes = await request(server).post('/users/login').send({
       email: 'existing@example.com',
       password: 'passwordExample',
