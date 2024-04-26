@@ -5,13 +5,6 @@ const userService = require('../../../services/user/userService');
 
 jest.mock('../../../services/user/userService');
 jest.mock('../../../services/user/userDataService');
-jest.mock('../../../services/responseDTO', () =>
-  jest.fn().mockImplementation((success, data, message) => ({
-    success,
-    data,
-    message,
-  }))
-);
 
 describe('UserController', () => {
   describe('registerUser', () => {

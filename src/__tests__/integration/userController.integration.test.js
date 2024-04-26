@@ -102,28 +102,31 @@ describe('User Controller Integration Tests', () => {
     });
   });
 
-  //login
-  it('should login a user and send http only token ', async () => {
-    //setup
-    await mongoose.model('Users').create({
-      name: 'ExistingUser',
-      email: 'existing@example.com',
-      password: await bcrypt.hash('passwordExample', 10),
-      isVerified: true,
+  describe('/login route integration tests', () => {
+    //login
+    it('should login a user and send http only token ', async () => {
+      //setup
+      await mongoose.model('Users').create({
+        name: 'ExistingUser',
+        email: 'existing@example.com',
+        password: await bcrypt.hash('passwordExample', 10),
+        isVerified: true,
+      });
+
+      await mongoose.model('Users').updateOne({ email: 'existing@example.com' }, { $set: { isVerified: true } });
+
+      // Execute and verify the result
+      const loginRes = await request(server).post('/users/login').send({
+        email: 'existing@example.com',
+        password: 'passwordExample',
+      });
+
+      expect(loginRes.statusCode).toEqual(200);
+      expect(loginRes.body.success).toEqual(true);
+
+      const cookies = loginRes.headers['set-cookie'];
+      expect(cookies).toEqual(expect.arrayContaining([expect.stringMatching(/^accessToken=.+;.*HttpOnly/)]));
     });
-
-    await mongoose.model('Users').updateOne({ email: 'existing@example.com' }, { $set: { isVerified: true } });
-
-    // Execute and verify the result
-    const loginRes = await request(server).post('/users/login').send({
-      email: 'existing@example.com',
-      password: 'passwordExample',
-    });
-
-    expect(loginRes.statusCode).toEqual(200);
-    expect(loginRes.body.success).toEqual(true);
-
-    const cookies = loginRes.headers['set-cookie'];
-    expect(cookies).toEqual(expect.arrayContaining([expect.stringMatching(/^accessToken=.+;.*HttpOnly/)]));
   });
+  //login
 });
