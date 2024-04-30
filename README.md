@@ -12,6 +12,7 @@ The `Backend EasyTask` repository contains the backend part of the EasyTask appl
 - **Password Management**: Enables users to reset forgotten passwords and set new ones through a secure, token-based process.
 - **Session Management**: Checks and manages user sessions to maintain secure access control.
 - **Data Validation**: Uses Joi to rigorously validate all incoming data, ensuring correctness and security.
+- **Testing**: Implements both unit and integration testing.
 
 ## Tech Stack 🖥️
 
@@ -21,6 +22,9 @@ The `Backend EasyTask` repository contains the backend part of the EasyTask appl
 - **JWT (JSON Web Tokens)** - Used for authorization and information exchange between parties.
 - **Joi** - A library for input validation, useful for checking the correctness of data sent to the server.
 - **Nodemailer** - A module for Node.js that allows easy email sending.
+- **Supertest** - A library for testing HTTP servers, commonly used for integration testing in Node.js applications.
+- **Jest** -  used for unit and integration testing in Node.js applications.
+
 
 ## Architecture 🏛️
 Backend EasyTask is designed using the Model-View-Controller (MVC) architectural pattern.
